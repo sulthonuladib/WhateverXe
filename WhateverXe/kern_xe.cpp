@@ -11,6 +11,7 @@
 #include "kern_dsi_native_backing.hpp"
 #include "kern_dsi_native_mode.hpp"
 #include "kern_xe.hpp"
+#include "kern_xepm.hpp"
 #include "kern_framebuffer_donor.hpp"
 #include "kern_xelp_os.hpp"
 #include "kern_xelp_call_target.hpp"
@@ -4352,6 +4353,8 @@ bool XE::xelpInstallHostRPS(KernelPatcher &patcher,size_t index,mach_vm_address_
 }
 
 void XE::processKernel(KernelPatcher &patcher, DeviceInfo *info) {
+	// Hybrid-CPU power profile (ported from the XPS/IrisXe stack): opt-in, does nothing without -wexpm.
+	XEPM::install(patcher);
 	// This must precede tglLoadHDMIWiring, tglPrepareMMIOUC and TGL FIA reads.
 	auto physicalGPU = OSDynamicCast(IOPCIDevice, info->videoBuiltin);
 	selectProfile(XELP::deviceProfile(physicalGPU));
