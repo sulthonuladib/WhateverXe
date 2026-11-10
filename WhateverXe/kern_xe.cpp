@@ -3936,6 +3936,12 @@ void XE::adlnBootstrap(IOPCIDevice *pci) {
 	// Bootstrap runs before framebuffer start loads its board policy. Native
 	// GOP qualification must already use that physical port, not assume B.
     const auto board=display13BoardWiring(pci);adlnOutputWiring=board;
+    {
+        // Wiring actually used by the handoff, plus the panel facts it was built from.
+        uint32_t wire[] {board.valid,board.hdmi,board.dp,board.panel,board.typeC,board.dsi,
+            static_cast<uint32_t>(firmwarePorts.panel.valid),firmwarePorts.panel.ddi};
+        pci->setProperty("WEXBoardWiring",wire,sizeof(wire));
+    }
     if(displayRequested && !Display13FBTopology::supportedWiring(board,xeProfile.display==XELP::Display::XeLPD,checkKernelArgument("-wex-dsi-adopt"))) {
         pci->setProperty("N97NativeRoutingUnavailable",true);return;
     }
