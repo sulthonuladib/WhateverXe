@@ -148,5 +148,6 @@
   "-wex-display13-offline": [],
   "-wex-edp-keep": [],
   "-wex-dsi-hdmi-test": [],
-  "-wex-dsi-power-test": []
+  "-wex-dsi-power-test": [],
+  "-wex-panel-fallback": []
 }

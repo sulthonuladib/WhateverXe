@@ -44,21 +44,6 @@ namespace XELP { namespace VBT {
                 }
             if(internal<2)w.panel=1U<<internal;
         }
-        if(!w.panel) {
-            // Some ADL-P laptop firmware omits the LFP option/eDP/backlight blocks, so
-            // panelFacts() bails and nativePPS0() can never pass, while the BDB child
-            // device still names the internal eDP DDI. Adopt that single route so the
-            // boot handoff has a panel connector at all: without it bootDDI stays
-            // UINT32_MAX and linearPlan() rejects the handoff as NotSingleHDMI.
-            // Panel power facts are not invented here; only the wiring bit is set.
-            unsigned internal=PortCount;
-            for(unsigned d=0;d<2;++d)
-                if((ports.present&backend&(1U<<d)) && ports.port[d].internal() && ports.port[d].dp()) {
-                    if(internal!=PortCount){internal=PortCount;break;}
-                    internal=d;
-                }
-            if(internal<2)w.panel=1U<<internal;
-        }
         for(unsigned d=3;d<7;++d) {
             const auto &p=ports.port[d];const auto aux=(d+3)*0x10U;
             const bool alt=p.dp() && !(p.type&0x10) && (p.capabilities&1);
