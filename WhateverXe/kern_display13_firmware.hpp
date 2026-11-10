@@ -22,11 +22,28 @@ namespace XELP { namespace VBT {
     }
     // Display13 VBT AUX F..I maps directly to TC1..4. DP-only USB-C records
     // describe a possible DP-alt route, not a live connection or ownership.
-    inline Display13OutputWiring display13Fixed(const Ports &ports,uint32_t backend,Family family=Family::AlderLakeN) {
+    // panelFallback: opt-in (-wex-panel-fallback) route adoption for firmware whose
+    // BDB names the internal eDP DDI but whose LFP option/eDP/backlight/power blocks
+    // are unusable. Off by default: the shipped contract only wires a panel it can
+    // also power, and tests/display13_panel.cpp pins that.
+    inline Display13OutputWiring display13Fixed(const Ports &ports,uint32_t backend,Family family=Family::AlderLakeN,
+                                                bool panelFallback=false) {
         auto w=display13HDMI(ports,backend);
         if(!w.valid || !ports.valid())return w;
         if(PanelPower::nativePPS0(ports,family) && (backend&(1U<<ports.panel.ddi)))
             w.panel=1U<<ports.panel.ddi;
+        if(!w.panel && panelFallback) {
+            // Only the wiring bit: panel power, backlight and delay facts are never
+            // invented here. Exactly one internal DP DDI must exist, otherwise the
+            // association stays ambiguous and nothing is adopted.
+            unsigned internal=PortCount;
+            for(unsigned d=0;d<2;++d)
+                if((ports.present&backend&(1U<<d)) && ports.port[d].internal() && ports.port[d].dp()) {
+                    if(internal!=PortCount){internal=PortCount;break;}
+                    internal=d;
+                }
+            if(internal<2)w.panel=1U<<internal;
+        }
         if(!w.panel) {
             // Some ADL-P laptop firmware omits the LFP option/eDP/backlight blocks, so
             // panelFacts() bails and nativePPS0() can never pass, while the BDB child
