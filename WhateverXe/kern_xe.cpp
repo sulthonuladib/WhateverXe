@@ -12,6 +12,7 @@
 #include "kern_dsi_native_mode.hpp"
 #include "kern_xe.hpp"
 #include "kern_xepm.hpp"
+#include "kern_adlp_wa.hpp"
 #include "kern_framebuffer_donor.hpp"
 #include "kern_xelp_os.hpp"
 #include "kern_xelp_call_target.hpp"
@@ -10583,6 +10584,8 @@ void XE::wrapAlderLakeNPowerInit(void *power,void *controller) {
 			pci->mapDeviceMemoryWithRegister(0x10,kIOMapInhibitCache) : nullptr;
 		if(map && map->getLength()==0x1000000 && map->getPhysicalAddress()==physical && map->getVirtualAddress()) {
 			c.controller=controller;c.power=power;c.map=map;
+			// ADL-P Display 13 chicken bits; opt-in so the stock behaviour stays bisectable.
+			if(checkKernelArgument("-wex-adlp-wa")) ADLPWA::apply(map);
 			c.access=*reinterpret_cast<void **>(static_cast<uint8_t *>(controller)+0xC40);
 			// Reference failures retain mappings/objects for diagnosis until reboot.
 			service->retain();static_cast<OSObject *>(power)->retain();static_cast<OSObject *>(c.access)->retain();
