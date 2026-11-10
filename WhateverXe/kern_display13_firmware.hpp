@@ -34,13 +34,14 @@ namespace XELP { namespace VBT {
             w.panel=1U<<ports.panel.ddi;
         if(!w.panel && panelFallback) {
             // Only the wiring bit: panel power, backlight and delay facts are never
-            // invented here. Exactly one internal DP DDI must exist, otherwise the
-            // association stays ambiguous and nothing is adopted.
+            // invented here. Firmware may carry a second internal DP child next to the
+            // real LFP record (HP ADL-P: DDI A aux 0x40 and a duplicate DDI B aux 0x10),
+            // so take the lowest internal DP DDI instead of treating the pair as
+            // ambiguous and dropping the route entirely.
             unsigned internal=PortCount;
             for(unsigned d=0;d<2;++d)
                 if((ports.present&backend&(1U<<d)) && ports.port[d].internal() && ports.port[d].dp()) {
-                    if(internal!=PortCount){internal=PortCount;break;}
-                    internal=d;
+                    internal=d;break;
                 }
             if(internal<2)w.panel=1U<<internal;
         }
