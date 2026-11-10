@@ -88,7 +88,7 @@ struct Ports {
 };
 // Optional panel facts must never weaken General Definitions admission or
 // make an unrelated malformed firmware tail reject usable connector facts.
-inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports) {
+inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports,bool lenient=false) {
     const uint8_t *options=nullptr,*edp=nullptr,*power=nullptr,*backlight=nullptr;
     size_t optionsSize=0,edpSize=0,powerSize=0,backlightSize=0;
     bool duplicate=false,backlightDuplicate=false;
@@ -114,9 +114,16 @@ inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports) 
     // Firmware can carry a second internal DP child (HP ADL-P: DDI A aux 0x40 plus a
     // duplicate DDI B aux 0x10). Keep the lowest DDI as the panel, like the child
     // handling above, instead of discarding every panel fact in the table.
+    // Firmware can carry a second internal DP child (HP ADL-P: DDI A aux 0x40 plus a
+    // duplicate DDI B aux 0x10). With the opt-in flag keep the lowest DDI as the panel
+    // instead of discarding every panel fact in the table; by default the shipped
+    // contract still reports no panel for an ambiguous pair.
     unsigned internal=PortCount;
     for(unsigned d=0;d<PortCount;++d)if((ports.present&(1U<<d)) &&
-        ports.port[d].internal() && ports.port[d].dp()) {internal=d;break;}
+        ports.port[d].internal() && ports.port[d].dp()) {
+        if(internal!=PortCount && !lenient)return; // no guessed panel/connector association
+        if(internal==PortCount)internal=d;
+    }
     if(internal==PortCount)return;
     auto &p=ports.panel;
     p.type=options[0]==0xFF?0:options[0];p.ddi=internal;
@@ -146,7 +153,10 @@ inline uint32_t ddi(Family family,uint32_t dvo) {
     }
     return PortCount;
 }
-inline Ports parse(const void *data,size_t length,Family family) {
+// lenient: opt-in (-wex-panel-fallback) handling of firmware tables that carry
+// duplicate child records for one DDI, as seen on HP/MSI ADL-P laptops. Default
+// keeps the strict presentation contract (Status::Conflict).
+inline Ports parse(const void *data,size_t length,Family family,bool lenient=false) {
     Ports r;
     if(!data || !length)return r;
     if(displayAdapter(family)==DisplayAdapter::Unknown){r.status=Status::Platform;return r;}
@@ -189,14 +199,17 @@ inline Ports parse(const void *data,size_t length,Family family) {
         if(!(type&2))continue;
         const auto d=ddi(family,c[16]);
         if(d==PortCount){++r.unmapped;continue;}
-        // A second child for the same DDI is common (HP/MSI ADL-P). Linux i915 keeps
-        // the first one instead of rejecting the whole table, so do the same.
-        if(r.present&(1U<<d))continue;
+        if(r.present&(1U<<d)) {
+            // Linux i915 keeps the first child for a repeated DDI; the default contract
+            // still rejects the table, so only the opt-in path continues.
+            if(!lenient){r.status=Status::Conflict;return r;}
+            continue;
+        }
         auto &q=r.port[d];q.type=type;q.dvo=c[16];q.ddc=c[19];q.aux=c[25];q.flags=c[23];q.capabilities=c[33];q.hdmiPreset=c[7]&31;
         r.present|=1U<<d;
         if(!q.fixedTMDS())r.ambiguous|=1U<<d;
     }
-    r.status=Status::Valid;panelFacts(b,bh,bs,r);return r;
+    r.status=Status::Valid;panelFacts(b,bh,bs,r,lenient);return r;
 }
 // OpRegion acquisition descriptor, kept pure for malformed/overflow testing.
 struct Region {uint64_t address {};uint32_t bytes {},inlineBytes {};bool valid {};};

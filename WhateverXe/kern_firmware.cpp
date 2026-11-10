@@ -30,14 +30,16 @@ void XE::xelpReadFirmware(IOPCIDevice *pci) {
                     auto vbtMap=vbtMemory ? vbtMemory->map(kIOMapReadOnly) : nullptr;
                     if(vbtMap && vbtMap->getVirtualAddress() && vbtMap->getLength()>=region.bytes) {
                         const auto data=reinterpret_cast<const void *>(vbtMap->getVirtualAddress());
-                        firmwarePorts=XELP::VBT::parse(data,region.bytes,xeProfile.family);
+                        firmwarePorts=XELP::VBT::parse(data,region.bytes,xeProfile.family,
+                            checkKernelArgument("-wex-panel-fallback"));
                         if(firmwarePorts.valid()){source=2;publishBytes(pci,"TGLVBT",data,firmwarePorts.bytes);}
                     }
                     if(vbtMap)vbtMap->release();
                     if(vbtMemory)vbtMemory->release();
                 }
                 if(!firmwarePorts.valid()) {
-                    const auto embedded=XELP::VBT::parse(bytes+0x400,region.inlineBytes,xeProfile.family);
+                    const auto embedded=XELP::VBT::parse(bytes+0x400,region.inlineBytes,xeProfile.family,
+                        checkKernelArgument("-wex-panel-fallback"));
                     if(embedded.valid()) {
                         firmwarePorts=embedded;source=1;
                         publishBytes(pci,"TGLVBT",bytes+0x400,firmwarePorts.bytes);
