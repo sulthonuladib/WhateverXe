@@ -312,13 +312,18 @@ int main() {
     LatchIO invalidLive(p);invalidLive.oldSurface=true;invalidLive.regs[0x701AC]=UINT32_MAX;
     assert(latch(invalidLive,invalidLive.snapshot(p)).status==Status::Readback);
     auto clockPlan=committed.snapshot(p);
-    assert(clockFits(clockPlan,1305600000) && clockFits(clockPlan,297000000));
-    assert(!clockFits(clockPlan,296999999));
+    // nativeHz is 2*CDCLK and gen12 carries two pixels per CDCLK, so the exact
+    // limit is nativeHz == pixelHz, not nativeHz/2 (i915 divides by 2 for
+    // DISPLAY_VER>=10).
+    assert(clockFits(clockPlan,1305600000) && clockFits(clockPlan,148500000));
+    assert(!clockFits(clockPlan,148499999));
     auto fasterCursor=cursor;fasterCursor.pixelHz=200000000;
     auto cursorClockPlan=committed.snapshot(p,&fasterCursor);
-    assert(clockFits(cursorClockPlan,400000000) && !clockFits(cursorClockPlan,399999999));
+    assert(clockFits(cursorClockPlan,400000000) && clockFits(cursorClockPlan,200000000));
+    assert(!clockFits(cursorClockPlan,199999999));
     clockPlan.pipePixelHz=200000000;clockPlan.pipeLineTime=pipeLineTime(p.htotal,clockPlan.pipePixelHz);
-    assert(!clockFits(clockPlan,384000000));
+    assert(clockFits(clockPlan,384000000));
+    assert(!clockFits(clockPlan,199999999));
     LatchIO afterCrawl(p);afterCrawl.clock=1305600000;
     assert(latch(afterCrawl,afterCrawl.snapshot(p)).status==Status::Complete && afterCrawl.writes.empty());
     LatchIO sameFrame(p);sameFrame.frozen=true;
