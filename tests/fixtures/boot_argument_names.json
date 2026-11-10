@@ -1,11 +1,4 @@
 {
-  "-wex-dsi-audit": [],
-  "-wex-dsi-adopt": [],
-  "-wex-dsi-panel-only": [],
-  "-wex-dsi-command-test": [],
-  "-wex-dsi-panel-test": [],
-  "-wex-dsi-host-test": [],
-  "-wex-dsi-stop-test": [],
   "-wex-adln-config-stage": [
     "-adlnconfigstage",
     "-n97configstage"
@@ -110,9 +103,39 @@
     "-adlntaskstage",
     "-n97taskstage"
   ],
+  "-wex-adlp-load-only": [],
+  "-wex-adlp-readout": [],
+  "-wex-adlp-wa": [],
+  "-wex-display-trace": [],
+  "-wex-display13-offline": [],
   "-wex-display13-trace": [
     "-display13trace",
     "-n97displaytrace"
+  ],
+  "-wex-dsi-adopt": [],
+  "-wex-dsi-audit": [],
+  "-wex-dsi-command-test": [],
+  "-wex-dsi-hdmi-test": [],
+  "-wex-dsi-host-test": [],
+  "-wex-dsi-panel-only": [],
+  "-wex-dsi-panel-test": [],
+  "-wex-dsi-power-test": [],
+  "-wex-dsi-stop-test": [],
+  "-wex-edp-keep": [],
+  "-wex-no-host-rps": [
+    "-tglnohostrps"
+  ],
+  "-wex-no-tc": [],
+  "-wex-noaccel": [],
+  "-wex-panel-fallback": [],
+  "-wex-tc-aux": [
+    "-tgltc-aux"
+  ],
+  "-wex-tc-bootstrap": [
+    "-tgltc-bootstrap"
+  ],
+  "-wex-tgl-hold-render-wake": [
+    "-tglholdrenderwake"
   ],
   "-wex-tgl-off": [
     "-igfxtgloff"
@@ -120,35 +143,13 @@
   "-wex-tgl-prog-off": [
     "-tglprogoff"
   ],
-  "-wex-no-host-rps": [
-    "-tglnohostrps"
-  ],
-  "-wex-tgl-hold-render-wake": [
-    "-tglholdrenderwake"
-  ],
-  "-wex-tc-aux": [
-    "-tgltc-aux"
-  ],
-  "-wex-tc-bootstrap": [
-    "-tgltc-bootstrap"
-  ],
-  "-wexoff": [
-    "-wxeoff"
+  "-wexbeta": [
+    "-wxebeta"
   ],
   "-wexdbg": [
     "-wxedbg"
   ],
-  "-wexbeta": [
-    "-wxebeta"
-  ],
-  "-wex-noaccel": [],
-  "-wex-display-trace": [],
-  "-wex-adlp-readout": [],
-  "-wex-adlp-load-only": [],
-  "-wex-display13-offline": [],
-  "-wex-edp-keep": [],
-  "-wex-dsi-hdmi-test": [],
-  "-wex-dsi-power-test": [],
-  "-wex-panel-fallback": [],
-  "-wex-no-tc": []
+  "-wexoff": [
+    "-wxeoff"
+  ]
 }
