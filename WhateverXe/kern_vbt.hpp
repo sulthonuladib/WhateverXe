@@ -111,12 +111,12 @@ inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports) 
     // available this early; like i915 without an OpRegion or PnP match, use 0.
     if(duplicate || !options || optionsSize<1 || (options[0]>=16 && options[0]!=0xFF) ||
        !edp || edpSize<212 || (ports.version>=232 && (!power || powerSize<56)))return;
+    // Firmware can carry a second internal DP child (HP ADL-P: DDI A aux 0x40 plus a
+    // duplicate DDI B aux 0x10). Keep the lowest DDI as the panel, like the child
+    // handling above, instead of discarding every panel fact in the table.
     unsigned internal=PortCount;
     for(unsigned d=0;d<PortCount;++d)if((ports.present&(1U<<d)) &&
-        ports.port[d].internal() && ports.port[d].dp()) {
-        if(internal!=PortCount)return; // no guessed panel/connector association
-        internal=d;
-    }
+        ports.port[d].internal() && ports.port[d].dp()) {internal=d;break;}
     if(internal==PortCount)return;
     auto &p=ports.panel;
     p.type=options[0]==0xFF?0:options[0];p.ddi=internal;
@@ -189,7 +189,9 @@ inline Ports parse(const void *data,size_t length,Family family) {
         if(!(type&2))continue;
         const auto d=ddi(family,c[16]);
         if(d==PortCount){++r.unmapped;continue;}
-        if(r.present&(1U<<d)){r.status=Status::Conflict;return r;}
+        // A second child for the same DDI is common (HP/MSI ADL-P). Linux i915 keeps
+        // the first one instead of rejecting the whole table, so do the same.
+        if(r.present&(1U<<d))continue;
         auto &q=r.port[d];q.type=type;q.dvo=c[16];q.ddc=c[19];q.aux=c[25];q.flags=c[23];q.capabilities=c[33];q.hdmiPreset=c[7]&31;
         r.present|=1U<<d;
         if(!q.fixedTMDS())r.ambiguous|=1U<<d;

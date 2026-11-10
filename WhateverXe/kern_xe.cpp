@@ -3899,6 +3899,13 @@ Display13OutputWiring XE::display13BoardWiring(IOService *provider) {
         board=XELP::VBT::selectHDMI(true,wiring?wiring->getBytesNoCopy():nullptr,
             wiring?wiring->getLength():0,firmwarePorts,3);
     }
+    // -wex-no-tc: firmware advertises TC1..4, but this board hands no TC route over
+    // and the installed donor has no TC hooks, so requiring them would refuse FB
+    // start (ADLPFBTCUnavailable). Drop the TC routes from the wiring.
+    if(checkKernelArgument("-wex-no-tc")) {
+        board.dp&=~0x78U;board.typeC&=~0x78U;
+        if(!board.described())return {};
+    }
     if(checkKernelArgument("-wex-dsi-adopt")) {
         // The old HDMI experiment tears down the firmware DSI link. Never
         // combine that handoff with adoption, or replace an existing A route.
@@ -9295,6 +9302,7 @@ void XE::adlnSetDualClock(IOService *controller,uint64_t nativeHz) {
             if(!evidence[7]) {
                 ready=reinterpret_cast<bool (*)(IOWorkLoop *)>(callbackXE->adlnWorkLoopTryClose)(loop);
                 if(ready) {acquired=loop;evidence[8]=1;}
+                else if(!active) {ready=true;evidence[8]=2;} // cold CDCLK start, no active pipe
             }
         }
         if(ready)for(unsigned p=0;p<3;++p)if(active&(1U<<p)) {
