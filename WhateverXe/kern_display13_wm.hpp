@@ -287,11 +287,18 @@ inline TriggerSurfaces triggerSurfaces(const TriggerPacket *packets,uint32_t cou
 // CDCLK. An unchanged hardware-verified plan is valid at another clock when
 // every consumer still fits its bandwidth. A clock request alone is no proof.
 inline bool clockFits(const Snapshot &s,uint64_t nativeHz) {
+    // nativeHz is twice the Linux CDCLK (see Display13Clock::Readout::nativeHz),
+    // and gen12+ emits two pixels per CDCLK: i915's intel_pixel_rate_to_cdclk()
+    // returns DIV_ROUND_UP(pixel_rate,2) for DISPLAY_VER>=10. Comparing pixelHz
+    // against nativeHz/2 therefore demanded pixelHz<=CDCLK, twice as strict as the
+    // hardware, and on this ADL-P eDP (342.06 MHz pixel against 179.2 MHz CDCLK)
+    // it rejected a plan the pipe can carry, latching dbuf.faulted and freezing
+    // wmPending for the whole session.
     return s.primary && s.primary->status==Status::Complete && nativeHz &&
-        s.primary->pixelHz && s.primary->pixelHz<=nativeHz/2 && s.pipePixelHz &&
-        s.pipePixelHz<=nativeHz/2 && s.pipeLineTime==pipeLineTime(s.primary->htotal,s.pipePixelHz) &&
+        s.primary->pixelHz && s.primary->pixelHz<=nativeHz && s.pipePixelHz &&
+        s.pipePixelHz<=nativeHz && s.pipeLineTime==pipeLineTime(s.primary->htotal,s.pipePixelHz) &&
         (!s.cursorActive || (s.cursor && s.cursor->status==Status::Complete &&
-            s.cursor->pixelHz && s.cursor->pixelHz<=nativeHz/2));
+            s.cursor->pixelHz && s.cursor->pixelHz<=nativeHz));
 }
 enum class LatchCheck : uint32_t {None,Controls,OtherPlane,DSB,Clock,Registers,Live,Frame,AwaitingScanout,AwaitingFlip};
 struct Latch {
